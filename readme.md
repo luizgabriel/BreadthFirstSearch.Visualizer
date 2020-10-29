@@ -1,5 +1,7 @@
 # Breadth First Search Visualizer
 
+![Preview](https://i.imgur.com/G5BIYOG.png)
+
 ## Installation
 
 ```shell script
