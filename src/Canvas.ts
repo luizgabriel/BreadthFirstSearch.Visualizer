@@ -1,4 +1,4 @@
-export function useCanvas(id: string, width: number, height: number): [HTMLCanvasElement, CanvasRenderingContext2D] {
+export function createCanvas(id: string, width: number, height: number): [HTMLCanvasElement, CanvasRenderingContext2D] {
     const canvas = document.getElementById(id) as HTMLCanvasElement;
     if (!canvas)
         throw new Error('Could not find canvas');

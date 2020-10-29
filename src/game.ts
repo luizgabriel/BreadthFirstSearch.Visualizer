@@ -1,31 +1,30 @@
-import {CellType, useGame} from './GameState';
-import {useCanvas} from './Canvas';
-import {checkPointIntersectsRect, Geom} from "./Geom";
+import {CellData, CellType, createGame} from './GameState';
+import {createCanvas} from './Canvas';
+import {checkPointInsideRect, Point, Rect} from './Geom';
 
-const [canvas, graphics] = useCanvas('game-canvas', 1280, 720);
-const {gameState, onClickLeft, onClickRight} = useGame(30, 15);
+const [canvas, graphics] = createCanvas('game-canvas', 1280, 720);
+const {gameState, onClickLeft, onClickRight, startSimulation, stepSimulation, resetSimulation} = createGame(42, 17);
 
-
-function calculateCellRect(i: any, j: any): Geom {
+function calculateCellRect(point: Point): Rect {
     const cellWidth = 30;
     const cellHeight = 30;
     const yOffset = canvas.height / 4;
 
     return {
-        x: parseInt(i, 10) * cellWidth,
-        y: yOffset + parseInt(j, 10) * cellHeight,
+        x: point.x * cellWidth,
+        y: yOffset + point.y * cellHeight,
         width: cellWidth,
         height: cellHeight
     };
 }
 
 function onKeyUp(event: KeyboardEvent) {
-    function startAlgorithm() {
-        console.log('start algorithm!');
+    if (event.code === 'Enter') {
+        startSimulation();
     }
 
-    if (event.code === 'Enter') {
-        startAlgorithm();
+    if (event.code === 'Escape') {
+        resetSimulation();
     }
 }
 
@@ -40,12 +39,17 @@ function onMouseMove(event: MouseEvent) {
         onClickLeft(true);
     }
 
-    for (const i in gameState.cells) {
-        for (const j in gameState.cells[i]) {
-            const cellRect = calculateCellRect(i, j);
+    const mousePoint: Point = {x: event.clientX, y: event.clientY};
 
-            if (checkPointIntersectsRect({x: event.clientX, y: event.clientY}, cellRect)) {
-                gameState.activeCell = {x: i, y: j};
+    for (let i = 0; i < gameState.width; i++) {
+        for (let j = 0; j < gameState.height; j++) {
+
+            const point: Point = {x: i, y: j};
+            const cell: CellData = gameState.cells[i][j];
+            const cellRect = calculateCellRect(point);
+
+            if (checkPointInsideRect(mousePoint, cellRect)) {
+                gameState.activeCell = {point, cell};
                 return;
             }
         }
@@ -56,9 +60,6 @@ function onMouseRelease(event: MouseEvent) {
     if (!gameState.activeCell)
         return;
 
-    const {x: activeX, y: activeY} = gameState.activeCell;
-    const cell = gameState.cells[activeX][activeY];
-
     if (event.button === 0) {
         leftMouseDown = false;
         onClickLeft(false);
@@ -67,67 +68,98 @@ function onMouseRelease(event: MouseEvent) {
     }
 }
 
-function onGameRender() {
+function renderGame() {
     graphics.clearRect(0, 0, canvas.width, canvas.height);
 
     graphics.fillStyle = '#FFFFFF';
-    graphics.font = "30px Arial";
-    graphics.fillText("Breadth First Search Visualizer", 0, 50, 400);
+    graphics.font = '30px Arial';
+    graphics.fillText('Breadth First Search Visualizer', 0, 50, 400);
 
-    graphics.font = "15px Arial";
-    graphics.fillText("Left Click: Draw WALL", 0, 70, 400);
-    graphics.fillText("Right Click: Draw Start / End", 0, 90, 400);
-    graphics.fillText("Press Enter: Start Algorithim", 0, 110, 400);
+    graphics.font = '15px Arial';
+    graphics.fillText('Left Click: Draw WALL', 0, 70, 400);
+    graphics.fillText('Right Click: Draw Start / End', 0, 90, 400);
+    graphics.fillText('Press Enter: Start Algorithim', 0, 110, 400);
+    graphics.fillText('Press Esc: Reset Algorithim', 0, 130, 400);
 
-    for (const i in gameState.cells) {
-        for (const j in gameState.cells[i]) {
+    for (let i = 0; i < gameState.width; i++) {
+        for (let j = 0; j < gameState.height; j++) {
             const cell = gameState.cells[i][j];
-            const cellRect = calculateCellRect(i, j);
+            const cellRect = calculateCellRect({x: i, y: j});
 
             graphics.lineWidth = 1;
             graphics.strokeStyle = '#bbbbc4';
             graphics.strokeRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
 
-            switch (cell) {
-                case CellType.EMPTY:
-                    graphics.fillStyle = '#ffffff';
-                    break;
-                case CellType.BLOCKED:
-                    graphics.fillStyle = '#4747ab';
-                    break;
+            if (cell.type === CellType.EMPTY && cell.visited) {
+                graphics.fillStyle = '#ffe1a6';
+            } else {
+                switch (cell.type) {
+                    case CellType.EMPTY:
+                        graphics.fillStyle = '#ffffff';
+                        break;
+                    case CellType.BLOCKED:
+                        graphics.fillStyle = '#4747ab';
+                        break;
+                }
             }
 
             graphics.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+
+            if (cell.type === CellType.EMPTY && cell.visited) {
+                graphics.font = '15px Times New Roman';
+                graphics.fillStyle = '#15451d';
+                graphics.fillText(cell.distance.toString(), cellRect.x + 5, cellRect.y + 20, 20);
+            }
         }
     }
 
     if (gameState.start) {
-        const cellRect = calculateCellRect(gameState.start.x, gameState.start.y);
+        const cellRect = calculateCellRect(gameState.start.point);
 
         graphics.fillStyle = '#55a555';
         graphics.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
     }
 
     if (gameState.end) {
-        const cellRect = calculateCellRect(gameState.end.x, gameState.end.y);
+        const cellRect = calculateCellRect(gameState.end.point);
 
         graphics.fillStyle = '#8c2e2e';
         graphics.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+
+        if (gameState.end.cell.visited) {
+            graphics.font = '15px Times New Roman';
+            graphics.fillStyle = '#FFFFFF';
+            graphics.fillText(gameState.end.cell.distance.toString(), cellRect.x + 5, cellRect.y + 20, 20);
+        }
     }
 
     if (gameState.activeCell) {
-        const cellRect = calculateCellRect(gameState.activeCell.x, gameState.activeCell.y);
+        const cellRect = calculateCellRect(gameState.activeCell.point);
 
         graphics.strokeStyle = '#fdbd14';
         graphics.lineWidth = 3;
         graphics.strokeRect(cellRect.x + 1, cellRect.y + 1, cellRect.width, cellRect.height);
     }
 
-    requestAnimationFrame(onGameRender);
+    for (const node of gameState.queue) {
+        const cellRect = calculateCellRect(node.point);
+
+        graphics.strokeStyle = '#ba4aec';
+        graphics.lineWidth = 3;
+        graphics.strokeRect(cellRect.x + 1, cellRect.y + 1, cellRect.width, cellRect.height);
+    }
 }
 
+function onGameUpdate() {
+    if (gameState.running)
+        stepSimulation();
 
-requestAnimationFrame(onGameRender);
+    renderGame();
+
+    requestAnimationFrame(onGameUpdate);
+}
+
+requestAnimationFrame(onGameUpdate);
 document.addEventListener('mousemove', onMouseMove);
 document.addEventListener('mouseup', onMouseRelease);
 document.addEventListener('mousedown', onMouseDown);
