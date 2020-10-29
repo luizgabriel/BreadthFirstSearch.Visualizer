@@ -9,7 +9,7 @@ $ git clone https://github.com/luizgabriel/BreadthFirstSearch.Visualizer.git
 $ cd BreadthFirstSearch.Visualizer
 $ npm install
 $ npm run build
-$ npm run dev
+$ npm run app
 ```
 
 ### Development mode
