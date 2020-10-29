@@ -117,10 +117,6 @@ function getNeighbors(gameState: GameState, current: PointAndCell): PointAndCell
     return neighbors;
 }
 
-function calculatePath() {
-
-}
-
 function stepSimulation(gameState: GameState) {
     if (!gameState.start || !gameState.end) {
         console.error("Should have start and end selected");
@@ -135,7 +131,6 @@ function stepSimulation(gameState: GameState) {
     }
 
     if (isEqualPoints(gameState.end.point, current.point)) {
-        calculatePath();
         gameState.running = false;
         return;
     }
