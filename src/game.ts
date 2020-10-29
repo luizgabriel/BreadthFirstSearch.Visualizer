@@ -74,7 +74,7 @@ function onGameRender() {
     graphics.font = "30px Arial";
     graphics.fillText("Breadth First Search Visualizer", 0, 50, 400);
 
-    graphics.font = "12px Arial";
+    graphics.font = "15px Arial";
     graphics.fillText("Left Click: Draw WALL", 0, 70, 400);
     graphics.fillText("Right Click: Draw Start / End", 0, 90, 400);
     graphics.fillText("Press Enter: Start Algorithim", 0, 110, 400);
